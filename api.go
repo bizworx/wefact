@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 )
 
@@ -43,6 +44,18 @@ type requestError struct {
 	Status     string    `json:"status"`
 	Date       time.Time `json:"date"`
 	Err        error     `json:"errors"`
+	//Body       ResponseBody `mapstructure:",remain"`
+}
+
+type Response struct {
+	Controller     string                 `mapstructure:"controller"`
+	Action         string                 `mapstructure:"action"`
+	Status         string                 `mapstructure:"status"`
+	Date           string                 `mapstructure:"date"`
+	TotalResults   int                    `mapstructure:"totalresults"`
+	CurrentResults int                    `mapstructure:"currentresults"`
+	Offset         int                    `mapstructure:"offset"`
+	Result         map[string]interface{} `mapstructure:",remain"`
 }
 
 func newRequestError(err error) requestError {
@@ -58,7 +71,7 @@ func (e requestError) Error() string {
 }
 
 // Request execute an API call to the wefact endpoint
-func (c *Client) Request(controller, action string, form url.Values, results interface{}) error {
+func (c *Client) Request(controller, action string, form url.Values) (*Response, error) {
 	if form == nil {
 		form = url.Values{}
 	}
@@ -68,28 +81,34 @@ func (c *Client) Request(controller, action string, form url.Values, results int
 
 	req, err := http.NewRequest(http.MethodPost, c.config.Url, bytes.NewBufferString(form.Encode()))
 	if err != nil {
-		return errors.Wrap(err, "http.NewRequest")
+		return nil, errors.Wrap(err, "http.NewRequest")
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	resp, err := c.client.Do(req)
 	if err != nil {
-		return errors.Wrap(err, "http.Do")
+		return nil, errors.Wrap(err, "http.Do")
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusUnauthorized {
-		return newRequestError(errors.New(http.StatusText(http.StatusUnauthorized)))
+		return nil, newRequestError(errors.New(http.StatusText(http.StatusUnauthorized)))
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return newRequestError(err)
+		return nil, newRequestError(err)
 	}
 
-	if err := json.Unmarshal(body, results); err != nil {
-		return newRequestError(err)
+	var response map[string]interface{}
+	if err := json.Unmarshal(body, &response); err != nil {
+		return nil, newRequestError(err)
 	}
 
-	return nil
+	var output = new(Response)
+	if err := mapstructure.Decode(response, output); err != nil {
+		return nil, errors.Wrap(err, "mapstructure.Decode")
+	}
+
+	return output, nil
 }
