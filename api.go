@@ -44,7 +44,6 @@ type requestError struct {
 	Status     string    `json:"status"`
 	Date       time.Time `json:"date"`
 	Err        error     `json:"errors"`
-	//Body       ResponseBody `mapstructure:",remain"`
 }
 
 type Response struct {
