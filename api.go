@@ -14,27 +14,20 @@ import (
 
 const defaultEndpoint string = "https://api.mijnwefact.nl/v2/"
 
-type Config struct {
-	Key string // WeFact API key
-	Url string // WeFact endpoint default: https://api.mijnwefact.nl/v2/
-}
-
 // Client
 type Client struct {
-	config *Config
-	client *http.Client
+	key      string
+	endpoint string
+	client   *http.Client
 }
 
 // New returns a new WeFact API http client.
 // If the url is empty set the url to the wefact default endpoint url
-func New(config *Config) *Client {
-
-	if config.Url == "" {
-		config.Url = defaultEndpoint
-	}
+func New(key string) *Client {
 	return &Client{
-		config: config,
-		client: http.DefaultClient,
+		key:      key,
+		endpoint: defaultEndpoint,
+		client:   http.DefaultClient,
 	}
 }
 
@@ -74,11 +67,11 @@ func (c *Client) Request(controller, action string, form url.Values) (*Response,
 	if form == nil {
 		form = url.Values{}
 	}
-	form.Add("api_key", c.config.Key)
+	form.Add("api_key", c.key)
 	form.Add("controller", controller)
 	form.Add("action", action)
 
-	req, err := http.NewRequest(http.MethodPost, c.config.Url, bytes.NewBufferString(form.Encode()))
+	req, err := http.NewRequest(http.MethodPost, c.endpoint, bytes.NewBufferString(form.Encode()))
 	if err != nil {
 		return nil, errors.Wrap(err, "http.NewRequest")
 	}
