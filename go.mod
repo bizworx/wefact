@@ -9,4 +9,5 @@ require (
 	github.com/mitchellh/mapstructure v1.3.3
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.6.1
+	golang.org/x/net v0.0.0-20220325170049-de3da57026de // indirect
 )

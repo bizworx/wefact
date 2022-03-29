@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/bizworx/billingportal"
-	"github.com/bizworx/wefact"
 	"github.com/go-playground/form"
 	"github.com/kr/pretty"
 	"github.com/pkg/errors"
@@ -58,7 +57,6 @@ func main() {
 		}
 
 		var debtor = response.Result["debtor"].(map[string]interface{})
-
 
 		invoiceDate, err := time.Parse("2-1-2006 15:04:05", invoice.Date)
 		if err != nil {

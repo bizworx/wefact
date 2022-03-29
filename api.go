@@ -2,14 +2,18 @@ package wefact
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io/ioutil"
+	"log"
+	"net"
 	"net/http"
 	"net/url"
 	"time"
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
+	"golang.org/x/net/proxy"
 )
 
 const defaultEndpoint string = "https://api.mijnwefact.nl/v2/"
@@ -23,11 +27,31 @@ type Client struct {
 
 // New returns a new WeFact API http client.
 // If the url is empty set the url to the wefact default endpoint url
-func New(key string) *Client {
+func New(key string, proxyHost string) *Client {
+	// dialer := &net.Dialer{
+	// 	Timeout:   30 * time.Second,
+	// 	KeepAlive: 30 * time.Second,
+	// }
+	// var dialContext = Dia;
+
+	dialer, err := proxy.SOCKS5("tcp", proxyHost, nil, proxy.Direct)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	dialContext := func(ctx context.Context, network, address string) (net.Conn, error) {
+		return dialer.Dial(network, address)
+	}
+
+	transport := &http.Transport{
+		DialContext:       dialContext,
+		DisableKeepAlives: true,
+	}
+
 	return &Client{
 		key:      key,
 		endpoint: defaultEndpoint,
-		client:   http.DefaultClient,
+		client:   &http.Client{Transport: transport},
 	}
 }
 
