@@ -3,6 +3,7 @@ module github.com/bizworx/wefact
 go 1.15
 
 require (
+	github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5
 	github.com/go-playground/form v3.1.4+incompatible
 	github.com/go-playground/form/v4 v4.1.1
 	github.com/kr/pretty v0.2.1
