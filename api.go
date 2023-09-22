@@ -25,27 +25,33 @@ type Client struct {
 	client   *http.Client
 }
 
+type ProxyConfig struct {
+	Host string
+}
+
 // New returns a new WeFact API http client.
 // If the url is empty set the url to the wefact default endpoint url
-func New(key string, proxyHost string) *Client {
+func New(key string, proxyConfig *ProxyConfig) *Client {
 	// dialer := &net.Dialer{
 	// 	Timeout:   30 * time.Second,
 	// 	KeepAlive: 30 * time.Second,
 	// }
 	// var dialContext = Dia;
+	var transport = http.DefaultClient.Transport
+	if proxyConfig != nil {
+		dialer, err := proxy.SOCKS5("tcp", proxyConfig.Host, nil, proxy.Direct)
+		if err != nil {
+			log.Fatal(err)
+		}
 
-	dialer, err := proxy.SOCKS5("tcp", proxyHost, nil, proxy.Direct)
-	if err != nil {
-		log.Fatal(err)
-	}
+		dialContext := func(ctx context.Context, network, address string) (net.Conn, error) {
+			return dialer.Dial(network, address)
+		}
 
-	dialContext := func(ctx context.Context, network, address string) (net.Conn, error) {
-		return dialer.Dial(network, address)
-	}
-
-	transport := &http.Transport{
-		DialContext:       dialContext,
-		DisableKeepAlives: true,
+		transport = &http.Transport{
+			DialContext:       dialContext,
+			DisableKeepAlives: true,
+		}
 	}
 
 	return &Client{
